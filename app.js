@@ -20,20 +20,124 @@ const tours = JSON.parse(
     fs.readFileSync('./dev-data/data/tours-simple.json')
     );
 
-app.get('/api/v1/tours', (req, res) => {
+// ---> REFACTORING <---
+const getAllTours = (req, res) => {
     res.status(200).json({
-           status: 'success',
-           results: tours.length,
-           data: {
-               tours
-           }
-        });
-});
+        status: 'success',
+        results: tours.length,
+        data: {
+            tours
+        }
+     });  
+};
 
-app.post('/api/v1/tours', (req, res) => {
- console.log(req.body);
- res.send('Done')
-})
+const getTour = (req, res) => {
+    //console.log(req.params);
+    const id = req.params.id * 1; //convert a string to a Number
+    const tour = tours.find(el => el.id === id)
+
+    if (!tour) {
+        return res.status(404).json({
+            status: 'fail',
+            message: 'Invalid ID'
+        })
+    }
+
+    res.status(200).json({
+            status: 'success',
+            data: {
+                tour
+            }
+        });
+};
+
+const createTour = (req, res) => {
+    //get the last id of the tour array
+    const newID = tours[tours.length -1].id +1;
+    const newTour = Object.assign({id: newID}, req.body); //Merge 2 Objects
+
+    tours.push(newTour);
+    
+    fs.writeFile('./dev-data/data/tours-simple.json', JSON.stringify(tours), err => {
+      res.status(201).json({
+          status: 'success',
+          data: {
+              tour: newTour
+          }
+      });
+
+        })
+     
+};
+
+const updateTour = (req, res) => {
+    const id = req.params.id * 1; //convert a string to a Number
+    const tour = tours.find(el => el.id === id)
+
+    if (!tour) {
+        return res.status(404).json({
+            status: 'fail',
+            message: 'Invalid ID'
+        })
+    }
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            tour: '<Update file>'
+        }
+    })
+};
+
+const deleteTour = (req, res) => {
+    const id = req.params.id * 1; //convert a string to a Number
+    const tour = tours.find(el => el.id === id)
+
+    if (!tour) {
+        return res.status(404).json({
+            status: 'fail',
+            message: 'Invalid ID'
+        })
+    }
+
+    res.status(204).json({
+        status: 'success',
+        data: null
+    })
+};
+
+
+// --->  GET  <-----
+//app.get('/api/v1/tours', getAllTours);
+
+// --->  GET URL PARAMETERS <-----
+//app.get('/api/v1/tours/:id', getTour);
+
+// --->  POST  <-----
+
+//app.post('/api/v1/tours', createTour);
+
+// --->  PATCH  <-----
+//app.patch('/api/v1/tours/:id', updateTour);
+
+// --->  DELETE  <-----
+
+//app.delete('/api/v1/tours/:id', deleteTour);
+
+
+//---> REFACTORING ROUTING <----
+app
+   .route('/api/v1/tours')
+   .get(getAllTours)
+   .post(createTour);
+
+
+app
+   .route('/api/v1/tours/:id')
+   .get(getTour)
+   .patch(updateTour)
+   .delete(deleteTour)
+
 //Start Server Express
 const port = 3000;
 app.listen(port, () => {
