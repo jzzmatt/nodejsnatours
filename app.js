@@ -1,9 +1,26 @@
 const express = require('express');
 const fs = require('fs');
+const { ppid } = require('process');
 const app = express();
+const morgan = require('morgan'); //permit to get log about the user request
+
+// 1) MIDDLEWARES
+//https://expressjs.com/en/resources/middleware.html
+app.use(morgan('dev'));
+
+app.use(express.json()); //permit to get the body request, also called body.parser
+
+app.use((req, res, next) => {
+    console.log('Hello from the middleware');
+    next();
+});
+
+app.use((req, res, next) => {
+    req.requesTime = new Date().toISOString(); //the ISOSstring permit to format the date
+    next();
+});
 
 
-app.use(express.json());
 /*
 INITIAL TEST
 app.get('/', (req, res) => {
@@ -15,13 +32,14 @@ app.post('/', (req, res) => {
     res.send('You can post to this endpoint...');
 })*/
 
-//Initial Route
+// 2) ROUTE HANDLER
 const tours = JSON.parse(
     fs.readFileSync('./dev-data/data/tours-simple.json')
     );
 
 // ---> REFACTORING <---
 const getAllTours = (req, res) => {
+    console.log(req.requesTime);
     res.status(200).json({
         status: 'success',
         results: tours.length,
@@ -53,7 +71,7 @@ const getTour = (req, res) => {
 
 const createTour = (req, res) => {
     //get the last id of the tour array
-    const newID = tours[tours.length -1].id +1;
+    const newID = tours[tours.length -1].id +1; //get the last tour and add 1
     const newTour = Object.assign({id: newID}, req.body); //Merge 2 Objects
 
     tours.push(newTour);
@@ -106,6 +124,40 @@ const deleteTour = (req, res) => {
     })
 };
 
+const getAllUsers = (req, res) => {
+    res.status(500).json({
+        status: 'error',
+        message: 'This route is not yet defined'
+    })
+}
+
+const getUser = (req, res) => {
+    res.status(500).json({
+        status: 'error',
+        message: 'This route is not yet defined'
+    })
+};
+
+const createUser = (req, res) => {
+    res.status(500).json({
+        status: 'error',
+        message: 'This route is not yet defined'
+    })
+};
+
+const updateUser = (req, res) => {
+    res.status(500).json({
+        status: 'error',
+        message: 'This route is not yet defined'
+    })
+};
+
+const deleteUser = (req, res) => {
+    res.status(500).json({
+        status: 'error',
+        message: 'This route is not yet defined'
+    })
+};
 
 // --->  GET  <-----
 //app.get('/api/v1/tours', getAllTours);
@@ -132,13 +184,26 @@ app
    .post(createTour);
 
 
+
 app
    .route('/api/v1/tours/:id')
    .get(getTour)
    .patch(updateTour)
    .delete(deleteTour)
 
-//Start Server Express
+app
+  .route('/api/v1/users')
+  .get(getAllUsers)
+  .post(createUser);
+
+
+app
+  .route('/api/v1/users/:id')
+  .get(getUser)
+  .patch(updateUser)
+  .delete(deleteUser);
+
+// 4) START SERVER
 const port = 3000;
 app.listen(port, () => {
     console.log(`App runing on port ${port}...`);
