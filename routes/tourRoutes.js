@@ -9,6 +9,8 @@ const tourController = require('../controllers/tourController');
 //Check If not, send back 400 (bad request)
 //Add it to the post handle stack
 
+router.route('/top-5-cheap')
+      .get(tourController.aliasTopTours, tourController.getAllTours);
 
 
 router
