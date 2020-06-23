@@ -1,5 +1,7 @@
 //const fs = require('fs');
 const Tour = require('./../models/tourModel');
+const e = require('express');
+const { Query } = require('mongoose');
 
 
 // const tours = JSON.parse(
@@ -30,17 +32,70 @@ const Tour = require('./../models/tourModel');
 // ---> REFACTORING <---
 
 exports.getAllTours = async (req, res) => {
+
     //Query all asset on the DB
     try {
-    const tours = await Tour.find();
+        //BUILD & Check for Query Request
+        //console.log(req.query)
+        //1) Normal Filtering
 
-    res.status(200).json({
-        status: 'success',
-        results: tours.length,
-         data: {
-             tours
-         }
-     });  
+        const queryObj = {...req.query}
+        const excludedFields = ['page','sort','limit','fields'];
+        excludedFields.forEach(el => delete queryObj[el]);
+
+        //console.log(req.query, queryObj);
+
+
+        //Query DB Case 0
+
+        
+        
+        // Query CHAINING Prototype
+
+        //  //Query DB Case 1
+        // const tours = await Tour.find({
+        //     duration: 5,
+        //     difficulty: 'easy'
+        // });  
+        //Query DB Case 2
+        // const tours = await Tour.find()
+        //                         .where('duration')
+        //                         .equals(5)
+        //                         .where('difficulty')
+        //                         .equals('easy')
+
+        //2) Advanced Filtering
+
+        // { difficulty : 'easy', duration: {$gte: 5}} //mongo format
+        // { difficulty: 'easy', duration: { gte: '5'}} // req.query format
+        //need to match [gte, gt, lte, lt] and change it to $gte, $gt, $lte which is mongo format
+        let queryStr = JSON.stringify(queryObj);
+        queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
+
+        let query = Tour.find(JSON.parse(queryStr));
+
+        //2) Sorting
+        //console.log(req.query.sort)
+        if (req.query.sort) {
+            const sortBy = req.query.sort.split(',').join(' ');
+            //console.log(sortBy);
+            query = query.sort(sortBy);
+        } else {
+            query = query.sort('-createdAt');  //this will be as a default filtering , if the user doesn't specify
+        }
+    
+     
+        //EXECUTE QUERY
+        const tours = await query;
+                                
+        // SEND RESPONSE
+        res.status(200).json({
+            status: 'success',
+            results: tours.length,
+            data: {
+                tours
+            }
+        });  
 
     }catch(err) {
        res.status(404).json({
@@ -120,7 +175,8 @@ exports.updateTour = async (req, res) => {
 
 exports.deleteTour = async (req, res) => {
     try {
-        await Tour.findByIdAndDelete(req.params.id)
+        await Tour.findByIdAndDelete(req.params.id);
+        
 
     res.status(204).json({
         status: 'success',
